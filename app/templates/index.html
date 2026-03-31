@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+
+{% block title %}MBT Dashboard{% endblock %}
+
+{% block content %}
+
+{% if user %}
+    <h1>Welcome!</h1>
+    <p>Your class</p>
+{% else %}
+    <h1>Welcome to MBT School Portal</h1>
+    <p>Please <a href="/">login</a> to access your dashboard.</p>
+{% endif %}
+
+{% endblock %}
