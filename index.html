@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>MBT School Portal</title>
+
+<style>
+*{
+margin:0;
+padding:0;
+box-sizing:border-box;
+font-family:Arial;
+}
+
+body{
+height:100vh;
+display:flex;
+justify-content:center;
+align-items:center;
+background:linear-gradient(135deg,#0f2027,#203a43,#2c5364);
+overflow:hidden;
+}
+
+/* animated background blobs */
+.blob{
+position:absolute;
+width:300px;
+height:300px;
+border-radius:50%;
+filter:blur(80px);
+opacity:0.5;
+animation:move 8s infinite alternate;
+}
+
+.b1{background:#00c6ff;top:40px;left:60px;}
+.b2{background:#ff6a00;bottom:40px;right:60px;}
+
+@keyframes move{
+from{transform:translateY(0px);}
+to{transform:translateY(40px);}
+}
+
+/* MAIN CARD */
+.card{
+position:relative;
+width:360px;
+padding:30px;
+background:rgba(255,255,255,0.10);
+backdrop-filter:blur(18px);
+border-radius:22px;
+box-shadow:0 25px 50px rgba(0,0,0,0.4);
+text-align:center;
+color:white;
+}
+
+/* LOGO */
+.logo{
+width:90px;
+height:90px;
+margin:auto;
+border-radius:50%;
+overflow:hidden;
+border:3px solid white;
+box-shadow:0 10px 20px rgba(0,0,0,0.3);
+}
+
+.logo img{
+width:100%;
+height:100%;
+object-fit:cover;
+}
+
+/* TEXT */
+h1{
+margin-top:12px;
+font-size:22px;
+letter-spacing:1px;
+}
+
+.subtitle{
+font-size:13px;
+opacity:0.7;
+margin-bottom:20px;
+}
+
+/* INPUTS */
+input,select{
+width:100%;
+padding:12px;
+margin:8px 0;
+border:none;
+border-radius:10px;
+outline:none;
+font-size:14px;
+transition:0.3s;
+}
+
+input:focus,select:focus{
+transform:scale(1.02);
+}
+
+/* BUTTON */
+button{
+width:100%;
+padding:12px;
+margin-top:10px;
+border:none;
+border-radius:10px;
+background:linear-gradient(90deg,#00c6ff,#0072ff);
+color:white;
+font-weight:bold;
+cursor:pointer;
+transition:0.3s;
+}
+
+button:hover{
+transform:scale(1.05);
+box-shadow:0 10px 20px rgba(0,0,0,0.3);
+}
+
+/* MESSAGE */
+.msg{
+font-size:13px;
+margin-top:8px;
+color:#ffdddd;
+}
+
+/* LINK */
+.link{
+margin-top:12px;
+font-size:12px;
+cursor:pointer;
+opacity:0.8;
+}
+</style>
+</head>
+
+<body>
+
+<div class="blob b1"></div>
+<div class="blob b2"></div>
+
+<div class="card">
+
+<!-- LOGO -->
+<div class="logo">
+<img src="https://cdn-icons-png.flaticon.com/512/3135/3135755.png">
+</div>
+
+<h1>MBT SCHOOL</h1>
+<div class="subtitle">Smart Student Portal Login</div>
+
+<input id="name" placeholder="Full Name">
+<input id="pass" type="password" placeholder="Password">
+
+<select id="cls">
+<option value="">Select Class</option>
+<option>Grade 9</option>
+<option>Grade 10</option>
+<option>Grade 11</option>
+<option>Grade 12</option>
+</select>
+
+<button onclick="go()">Continue</button>
+
+<p id="msg" class="msg"></p>
+
+<div class="link" onclick="toggle()">Switch Login / Signup</div>
+
+</div>
+
+<script>
+let login=false;
+
+function toggle(){
+login=!login;
+document.getElementById("msg").innerText="";
+}
+
+function go(){
+let n=document.getElementById("name").value;
+let p=document.getElementById("pass").value;
+let c=document.getElementById("cls").value;
+let msg=document.getElementById("msg");
+
+let users=JSON.parse(localStorage.getItem("u")||"[]");
+
+if(!n||!p||!c){
+msg.innerText="Please fill all fields";
+return;
+}
+
+if(!login){
+users.push({n,p,c});
+localStorage.setItem("u",JSON.stringify(users));
+msg.style.color="lightgreen";
+msg.innerText="Account created successfully!";
+}
+else{
+let ok=users.find(x=>x.n==n&&x.p==p);
+
+if(ok){
+localStorage.setItem("user",JSON.stringify(ok));
+location.href="class.html";
+}else{
+msg.innerText="Invalid login details!";
+}
+}
+}
+</script>
+
+</body>
+</html>
