@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <link rel="icon" type="image/x-icon" href="/static/favicon.ico">
+    <link rel="stylesheet" href="/static/login_style.css">
+</head>
+
+<body>
+    <div class="blob b1"></div>
+    <div class="blob b2"></div>
+
+    <div class="card">
+
+        <!-- LOGO -->
+        <div class="logo">
+            <img src="https://cdn-icons-png.flaticon.com/512/3135/3135755.png">
+        </div>
+
+        <h1>MBT SCHOOL</h1>
+        <h2 style="padding-top: 12px;">Create an account</h2>
+        <div class="subtitle" style="padding-top: 8px;">Please enter your details</div>
+
+        <form action="/signup" method="post" class="form">
+            <input id="name" name="name" placeholder="Full Name" required>
+            <input id="pass" name="pass" type="password" placeholder="Password" required>
+
+            <select id="cls" name="cls" required>
+                <option value="">Select Class</option>
+                <option>Grade 9</option>
+                <option>Grade 10</option>
+                <option>Grade 11</option>
+                <option>Grade 12</option>
+            </select>
+
+            <button type="submit" class="submit-btn">Continue</button>
+        </form>
+
+        <p id="msg" class="msg"></p>
+
+        <div class="link">Don't have an account? <a href="/signup">Signup</a></div>
+
+    </div>
+</body>
+</html>
