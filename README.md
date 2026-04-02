@@ -1,6 +1,6 @@
 # MBS_School_quiz_platform
 
-# MBS School Quiz Platform is a web application designed to facilitate online quizzes for students. It provides a user-friendly interface for students to log in, sign up, and access their quiz dashboard. The platform is built using Go for the backend and HTML/CSS for the frontend.
+### MBS School Quiz Platform is a web application designed to facilitate online quizzes for students. It provides a user-friendly interface for students to log in, sign up, and access their quiz dashboard. The platform is built using Go for the backend and HTML/CSS for the frontend.
 
 ## Features
 
