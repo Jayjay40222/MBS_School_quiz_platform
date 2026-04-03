@@ -106,6 +106,12 @@ func handleSignup(w http.ResponseWriter, r *http.Request) {
 		password := r.FormValue("pass")
 		class := r.FormValue("cls")
 
+		// Confirm password strength
+		if len(password) < 8 {
+			http.Error(w, "Password must be at least 8 characters long", http.StatusBadRequest)
+			return
+		}
+
 		hashPass, err := bcrypt.GenerateFromPassword([]byte(password), 10)
 		if err != nil {
 			http.Error(w, "Server error", 500)
