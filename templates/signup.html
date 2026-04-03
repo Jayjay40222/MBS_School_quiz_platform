@@ -43,3 +43,17 @@
     </div>
 </body>
 </html>
+
+<script>
+    document.addEventListener("DOMContentLoaded", () => {
+    const getPass = document.getElementById("pass");
+
+    getPass.addEventListener("input", () => {
+        if (getPass.value.length < 8) {
+            getPass.setCustomValidity("Password must be at least 8 characters long.");
+        } else {
+            getPass.setCustomValidity("");
+        }
+    });
+});
+</script>

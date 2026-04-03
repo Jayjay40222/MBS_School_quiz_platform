@@ -34,3 +34,9 @@
    go run *.go
    ```
 5. Open your web browser and navigate to `http://localhost:8080` to access the platform.
+
+## For testing
+To test the application, you can use the following credentials:
+- Username: `Test User`
+- Password: `123456789`
+- Class : `Grade 9`

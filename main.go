@@ -45,13 +45,17 @@ func handleLogin(w http.ResponseWriter, r *http.Request) {
 		// Check if user exists in DB
 		exists, err := CheckUserInDB(username)
 		if err != nil {
+			// Server error
 			log.Fatal("Failed checking user in DB")
+			http.Error(w, "Server Error", 500)
 		}
 
 		if exists {
 			usr, err := GetUser(username)
 			if err != nil {
+				// Server error
 				log.Fatal("Failed getting user from DB")
+				http.Error(w, "Server Error", 500)
 			}
 
 			if err := bcrypt.CompareHashAndPassword([]byte(usr.hashedPassword), []byte(password)); err != nil || usr.grade != class {
