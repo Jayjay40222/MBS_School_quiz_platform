@@ -38,5 +38,5 @@
 ## For testing
 To test the application, you can use the following credentials:
 - Username: `Test User`
-- Password: `123456789`
+- Password: `123456`
 - Class : `Grade 9`
