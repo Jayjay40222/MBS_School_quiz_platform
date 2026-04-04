@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Quiz Results</title>
+    <link rel="stylesheet" href="/static/play_style.css">
+</head>
+<body>
+<div class="topbar">
+    <div>📊 Quiz Results</div>
+    <div>⭐ Points: {{.User.Points}}</div>
+</div>
+
+<div class="page active">
+    <h2>Total Points Earned: {{.TotalPoints}}</h2>
+
+    {{range .Results}}
+    <div class="box" style="background: {{if .IsCorrect}}#00c6ff33{{else}}#ff003333{{end}};">
+        <h3>{{.Question}}</h3>
+        <p>Your Answer: {{.GivenAnswer}}</p>
+        {{if not .IsCorrect}}<p>Correct Answer: {{.CorrectAnswer}}</p>{{end}}
+        <p>Points Earned: {{.PointsEarned}}</p>
+    </div>
+    <hr>
+    {{end}}
+
+    <a href="/dashboard"><button type="button">Back to Dashboard</button></a>
+</div>
+</body>
+</html>

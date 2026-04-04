@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Quiz</title>
+    <link rel="stylesheet" href="/static/dashboard_style.css">
+</head>
+
+<body>
+
+<div class="topbar">
+    <div>🎓 MBS Quiz</div>
+    <div>🔥 Streak: <span id="streak">0</span></div>
+</div>
+
+<div id="quiz" class="page active">
+
+    <div class="pointsBox">
+        ⭐ Points: <span id="points">0</span>
+    </div>
+
+    <div class="grid">
+        <a class="card" href="/quiz/worksheet">📄 Worksheet</a>
+        <a href="/quiz/play?subject=Math&grade={{ .Grade }}" class="card">📐 Math</a>
+        <a href="/quiz/play?subject=English&grade={{.Grade}}" class="card">📘 English</a>
+        <a href="/quiz/play?subject=Physics&grade={{.Grade}}" class="card">⚡ Physics</a>
+        <a href="/quiz/play?subject=Chemistry&grade={{.Grade}}" class="card">🧪 Chemistry</a>
+        <a href="/quiz/play?subject=Biology&grade={{.Grade}}" class="card">🌱 Biology</a>
+        <a href="/quiz/play?subject=History&grade={{.Grade}}" class="card">📜 History</a>
+        <a href="/quiz/play?subject=Geography&grade={{.Grade}}" class="card">🌍 Geography</a>
+        <a href="/quiz/play?subject=Economics&grade={{.Grade}}" class="card">💰 Economics</a>
+    </div>
+
+</div>
+
+<div class="nav">
+    <a href="/home" class="tab">🏠</a>
+    <a href="/quiz" class="tab active">❓</a>
+    <a href="/board" class="tab">🏆</a>
+    <a href="/profile" class="tab">👤</a>
+</div>
+
+<script src="/static/app.js"></script>
+</body>
+</html>

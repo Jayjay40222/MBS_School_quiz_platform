@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Leaderboard</title>
+    <link rel="stylesheet" href="/static/dashboard_style.css">
+</head>
+
+<body>
+
+<div class="topbar">
+    <div>🎓 MBS Quiz</div>
+    <div>🔥 Streak: <span id="streak">0</span></div>
+</div>
+
+<div id="board" class="page active">
+
+    <div class="pointsBox">
+        🏆 Total Points: <span id="lbPoints">0</span>
+    </div>
+
+    <div class="lb-item">
+        <div style="display:flex;align-items:center;">
+            <img id="lbPhoto" src="https://via.placeholder.com/40">
+            <span id="lbName">Student</span>
+        </div>
+        <div id="lbScore">0</div>
+    </div>
+
+</div>
+
+<div class="nav">
+    <a href="/home" class="tab">🏠</a>
+    <a href="/quiz" class="tab">❓</a>
+    <a href="/board" class="tab active">🏆</a>
+    <a href="/profile" class="tab">👤</a>
+</div>
+
+<script src="/static/app.js"></script>
+</body>
+</html>

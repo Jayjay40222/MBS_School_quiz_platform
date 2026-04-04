@@ -1,245 +1,33 @@
 <!DOCTYPE html>
 <html>
-
 <head>
-    <title>MBT Dashboard</title>
-
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: 'Segoe UI', Arial;
-        }
-
-        body {
-            background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
-            color: white;
-            overflow-x: hidden;
-        }
-
-        /* BACKGROUND BLOBS */
-        .blob {
-            position: absolute;
-            width: 300px;
-            height: 300px;
-            border-radius: 50%;
-            filter: blur(100px);
-            opacity: 0.4;
-            z-index: -1;
-            animation: move 10s infinite alternate;
-        }
-
-        .b1 {
-            background: #00c6ff;
-            top: -50px;
-            left: -50px;
-        }
-
-        .b2 {
-            background: #ff6a00;
-            bottom: -50px;
-            right: -50px;
-        }
-
-        @keyframes move {
-            from {
-                transform: translateY(0);
-            }
-
-            to {
-                transform: translateY(60px);
-            }
-        }
-
-        /* HEADER */
-        .header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 20px;
-            background: rgba(255, 255, 255, 0.08);
-            backdrop-filter: blur(15px);
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-        }
-
-        .logo {
-            font-size: 20px;
-            font-weight: bold;
-        }
-
-        .user {
-            text-align: right;
-        }
-
-        .user small {
-            opacity: 0.7;
-        }
-
-        /* POINT CARD */
-        .points {
-            margin: 20px;
-            padding: 20px;
-            border-radius: 20px;
-            background: linear-gradient(90deg, #00c6ff, #0072ff);
-            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.4);
-        }
-
-        .points h3 {
-            font-size: 14px;
-            opacity: 0.9;
-        }
-
-        .points h1 {
-            font-size: 32px;
-        }
-
-        /* GRID */
-        .grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 18px;
-            padding: 20px;
-        }
-
-        .card {
-            background: rgba(255, 255, 255, 0.08);
-            padding: 25px;
-            border-radius: 18px;
-            text-align: center;
-            cursor: pointer;
-            transition: 0.3s;
-            backdrop-filter: blur(10px);
-            font-size: 16px;
-            font-weight: 500;
-        }
-
-        .card:hover {
-            transform: translateY(-6px) scale(1.05);
-            background: linear-gradient(90deg, #00c6ff, #0072ff);
-        }
-
-        /* NAVBAR */
-        .nav {
-            position: fixed;
-            bottom: 0;
-            width: 100%;
-            display: flex;
-            justify-content: space-around;
-            background: rgba(255, 255, 255, 0.08);
-            backdrop-filter: blur(15px);
-            padding: 12px;
-            border-top: 1px solid rgba(255, 255, 255, 0.1);
-        }
-
-        .nav div {
-            text-align: center;
-            font-size: 12px;
-            cursor: pointer;
-        }
-
-        .nav div:hover {
-            color: #00c6ff;
-        }
-    </style>
+    <title>MBS School Quiz Platform</title>
+    <link rel="stylesheet" href="/static/dashboard_style.css">
 </head>
 
 <body>
 
-    <div class="blob b1"></div>
-    <div class="blob b2"></div>
+<div class="topbar">
+    <div>🎓 MBS Quiz</div>
+    <div>🔥 Streak: <span id="streak">0</span></div>
+</div>
 
-    <!-- HEADER -->
-    <div class="header">
-        <div class="logo">🎓 MBT School</div>
-
-        <div class="user">
-            <div id="name">Student</div>
-            <small>
-                ⭐ <span id="points">0</span> | 🔥 <span id="streak">0</span>
-            </small>
-        </div>
+<div id="home" class="page active">
+    <div class="info">
+        <h3>🔥 Welcome, <span id="welcomeName">{{.FullName}}</span></h3>
+        <p>
+            MBS School Quiz Platform is a web application designed to facilitate online quizzes for students.
+        </p>
     </div>
+</div>
 
-    <!-- POINTS -->
-    <div class="points">
-        <h3>Total Points</h3>
-        <h1 id="bigPoints">0</h1>
-    </div>
+<div class="nav">
+    <a href="/home" class="tab active">🏠</a>
+    <a href="/quiz" class="tab">❓</a>
+    <a href="/board" class="tab">🏆</a>
+    <a href="/profile" class="tab">👤</a>
+</div>
 
-    <!-- SUBJECT GRID -->
-    <div class="grid">
-
-        <div class="card" onclick="openSub('Math')">📐 Math</div>
-        <div class="card" onclick="openSub('English')">📘 English</div>
-
-        <div class="card" onclick="openSub('Physics')">⚡ Physics</div>
-        <div class="card" onclick="openSub('Chemistry')">🧪 Chemistry</div>
-
-        <div class="card" onclick="openSub('Biology')">🌱 Biology</div>
-        <div class="card" onclick="openSub('History')">📜 History</div>
-
-        <div class="card" onclick="openSub('Geography')">🌍 Geography</div>
-        <div class="card" onclick="openSub('Economics')">💰 Economics</div>
-
-    </div>
-
-    <!-- NAV -->
-    <div class="nav">
-        <div onclick="home()">🏠<br>Home</div>
-        <div onclick="questions()">❓<br>Questions</div>
-        <div onclick="score()">🏆<br>Score</div>
-        <div onclick="profile()">👤<br>Profile</div>
-    </div>
-
-    <script>
-
-        /* USER */
-        let user = JSON.parse(localStorage.getItem("user") || "{}");
-        document.getElementById("name").innerText = user.n || "Student";
-
-        /* POINTS */
-        let pts = parseInt(localStorage.getItem("points") || 0);
-        document.getElementById("points").innerText = pts;
-        document.getElementById("bigPoints").innerText = pts;
-
-        /* STREAK SYSTEM */
-        let today = new Date().toDateString();
-        let last = localStorage.getItem("lastLogin");
-        let streak = parseInt(localStorage.getItem("streak") || 0);
-
-        if (last !== today) {
-            streak++;
-            localStorage.setItem("streak", streak);
-            localStorage.setItem("lastLogin", today);
-        }
-
-        document.getElementById("streak").innerText = streak;
-
-        /* NAVIGATION */
-        function openSub(sub) {
-            localStorage.setItem("subject", sub);
-            location.href = "quiz.html";
-        }
-
-        function home() {
-            location.reload();
-        }
-
-        function questions() {
-            alert("Questions page soon");
-        }
-
-        function score() {
-            alert("Leaderboard soon");
-        }
-
-        function profile() {
-            alert("Profile soon");
-        }
-
-    </script>
-
+<script src="/static/app.js"></script>
 </body>
-
 </html>

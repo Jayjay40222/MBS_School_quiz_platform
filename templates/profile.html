@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Profile</title>
+    <link rel="stylesheet" href="/static/dashboard_style.css">
+</head>
+
+<body>
+
+<div class="topbar">
+    <div>🎓 MBS Quiz</div>
+    <div>🔥 Streak: <span id="streak">0</span></div>
+</div>
+
+<div id="profile" class="page active">
+
+    <div class="profileBox">
+
+        <div class="avatarWrap">
+            <img id="profilePic" class="avatar" src="https://via.placeholder.com/90">
+
+            <button class="plusBtn" onclick="document.getElementById('fileInput').click()">+</button>
+            <input type="file" id="fileInput" accept="image/*" onchange="loadPhoto(event)">
+        </div>
+
+        <h3 id="name">Student</h3>
+        <p id="classText">Class: Not set</p>
+
+        <input id="newName" placeholder="Name">
+        <input id="newClass" placeholder="Class">
+
+        <button onclick="save()">Save</button>
+
+    </div>
+
+</div>
+
+<div class="nav">
+    <a href="/home" class="tab">🏠</a>
+    <a href="/quiz" class="tab">❓</a>
+    <a href="/board" class="tab">🏆</a>
+    <a href="/profile" class="tab active">👤</a>
+</div>
+
+<script src="/static/app.js"></script>
+</body>
+</html>

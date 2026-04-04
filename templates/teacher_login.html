@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <link rel="icon" type="image/x-icon" href="/static/favicon.ico">
+    <link rel="stylesheet" href="/static/login_style.css">
+</head>
+
+<body>
+    <div class="blob b1"></div>
+    <div class="blob b2"></div>
+
+    <div class="card">
+
+        <!-- LOGO -->
+        <div class="logo">
+            <img src="https://cdn-icons-png.flaticon.com/512/9721/9721088.png">
+        </div>
+
+        <h1>MBS SCHOOL</h1>
+        <div class="subtitle" style="padding-top: 12px;">Teacher login form</div>
+
+        <form action="/login" method="post" class="form">
+            <input id="name" name="name" placeholder="Teacher ID" required>
+            <input id="pass" name="pass" type="password" placeholder="Password" required>
+
+            <button type="submit" class="submit-btn">Continue</button>
+        </form>
+
+        <p id="msg" class="msg"></p>
+
+        <div class="link">Don't have an account? <a href="/signup">Signup</a></div>
+
+    </div>
+
+    <script>
+        let login = true;
+
+        // toggle login/signup
+        function toggle() {
+            login = !login;
+            document.getElementById("msg").innerText = "";
+        }
+
+        // mock users array
+        let users = [
+            { n: "Alice", p: "123", cls: "Grade 9" },
+            { n: "Bob", p: "456", cls: "Grade 10" }
+        ];
+
+        function go() {
+            let user = document.getElementById("name").value;
+            let pass = document.getElementById("pass").value;
+            let cls = document.getElementById("cls").value;
+            let msg = document.getElementById("msg");
+
+            if (!user || !pass || !cls) {
+                msg.innerText = "Please fill all fields";
+                msg.style.color = "red";
+                return;
+            }
+
+            if (login) {
+                msg.style.color = "lightgreen";
+                msg.innerText = "Account created successfully!";
+            } else {
+                let ok = users.find(x => x.n == user && x.p == pass);
+                if (ok) {
+                    localStorage.setItem("user", JSON.stringify(ok));
+                    location.href = "class.html";
+                } else {
+                    msg.innerText = "Invalid login details!";
+                }
+            }
+        }
+
+    </script>
+</body>
+</html>

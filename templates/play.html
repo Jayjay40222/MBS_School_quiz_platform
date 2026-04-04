@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Quiz</title>
+    <link rel="stylesheet" href="/static/play_style.css">
+</head>
+<body>
+
+<div class="topbar">
+    <div>❓ Quiz</div>
+    <div>⭐ Points: {{.User.Points}}</div>
+</div>
+
+<div class="page active">
+    <form method="POST" action="/quiz/submit">
+
+        {{range .Questions}}
+        <div class="box">
+            <h3 id="question">{{.Question}}</h3>
+        </div>
+
+        <div class="option">
+            <label>
+                <input type="radio" name="answer_{{.Id}}" value="A">
+                <span>{{.A}}</span>
+            </label>
+        </div>
+
+        <div class="option">
+            <label>
+                <input type="radio" name="answer_{{.Id}}" value="B">
+                <span>{{.B}}</span>
+            </label>
+        </div>
+
+        <div class="option">
+            <label>
+                <input type="radio" name="answer_{{.Id}}" value="C">
+                <span>{{.C}}</span>
+            </label>
+        </div>
+
+        <div class="option">
+            <label>
+                <input type="radio" name="answer_{{.Id}}" value="D">
+                <span>{{.D}}</span>
+            </label>
+        </div>
+
+        <input type="hidden" name="qid_{{.Id}}" value="{{.Id}}">
+        <hr>
+        {{end}}
+
+        <button type="submit">Submit All</button>
+        <a href="/dashboard"><button type="button">Back</button></a>
+    </form>
+</div>
+
+<!-- JS to handle selection UI -->
+<script>
+document.querySelectorAll('.question-block').forEach(block => {
+    block.querySelectorAll('.option').forEach(opt => {
+        opt.addEventListener('click', () => {
+            let radio = opt.querySelector('input[type="radio"]');
+            radio.checked = true;
+
+            // ONLY affect this question
+            block.querySelectorAll('.option').forEach(o => o.classList.remove('active'));
+
+            opt.classList.add('active');
+        });
+    });
+});
+</script>
+
+</body>
+</html>
