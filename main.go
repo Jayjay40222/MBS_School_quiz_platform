@@ -17,7 +17,7 @@ var templates = template.Must(template.ParseGlob("templates/*.html"))
 
 func main() {
 	InitDB()
-	que := Question{Question: "What is Atomic mass?", Subject: "Chemistry", For_grade: "Grade 9", A: "Some some", B: "b soe som", C: "c som", D: "d som", Correct_answer: "A"}
+	que := Question{Question: "What is Atomic mass?", Subject: "Chemistry", For_grade: "Grade 9", A: "Some some", B: "b soe som", C: "c som", D: "d som", Correct_answer: "A", Points_worth: 5}
 	AddQuestionToDB(que)
 	mux := http.NewServeMux()
 	mux.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("static"))))
@@ -217,6 +217,7 @@ func handleQuiz(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case http.MethodGet:
 		err = templates.ExecuteTemplate(w, "quiz.html", usr)
+		log.Println("User Points: ", usr.Points)
 		if err != nil {
 			log.Println("Template execution error:", err)
 			http.Error(w, "Server error", http.StatusInternalServerError)
@@ -235,7 +236,7 @@ func handleQuizPlay(w http.ResponseWriter, r *http.Request) {
 	grade := r.URL.Query().Get("grade")
 
 	// Query questions for user
-	questions, err := QueryQuestionsForUser(subject, grade)
+	questions, err := QueryQuestionsForUser(usr.Id, subject, grade)
 	if err != nil {
 		http.Error(w, "Server error", 500)
 		log.Fatal("Failed querying questions", err)
@@ -302,6 +303,13 @@ func handleQuizSubmit(w http.ResponseWriter, r *http.Request) {
 			if err != nil {
 				http.Error(w, "Server Error", http.StatusInternalServerError)
 				log.Println("Error fetching question:", err)
+				return
+			}
+
+			err = UserDoneQuestion(usr.Id, question, ans, qid)
+			if err != nil {
+				http.Error(w, "Server Error", http.StatusInternalServerError)
+				log.Println("Failed adding question to history:", err)
 				return
 			}
 

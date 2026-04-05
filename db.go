@@ -56,6 +56,20 @@ func InitDB() {
 		points_worth INT
 	)
 	`)
+
+	// User question history
+	db.Exec(`
+	CREATE TABLE IF NOT EXISTS user_question_history (
+    	id INTEGER PRIMARY KEY AUTOINCREMENT,
+    	user_id INTEGER,
+    	question_id INTEGER,
+    	is_correct INTEGER,
+    	points_earned INTEGER,
+    	answered_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+
+    	UNIQUE(user_id, question_id)
+	);
+	`)
 }
 
 func GetDB() *sql.DB {
@@ -122,8 +136,8 @@ func GetUserFromSession(session string) (*User, error) {
 	}
 
 	// Get user info from users table
-	err = db.QueryRow("SELECT id, full_name, hashed_password, class FROM users WHERE id = ?", usr_id).
-		Scan(&usr.Id, &usr.FullName, &usr.hashedPassword, &usr.Grade)
+	err = db.QueryRow("SELECT id, full_name, hashed_password, class, points FROM users WHERE id = ?", usr_id).
+		Scan(&usr.Id, &usr.FullName, &usr.hashedPassword, &usr.Grade, &usr.Points)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return nil, nil
@@ -134,8 +148,17 @@ func GetUserFromSession(session string) (*User, error) {
 	return &usr, nil
 }
 
-func QueryQuestionsForUser(subject string, grade string) ([]Question, error) {
-	rows, err := db.Query("SELECT id, question, option_a, option_b, option_c, option_d, correct_answer, points_worth FROM questions WHERE subject = ? AND for_grade = ?", subject, grade)
+func QueryQuestionsForUser(user_id int, subject string, grade string) ([]Question, error) {
+	rows, err := db.Query(`SELECT id, question, option_a, option_b, option_c, option_d, correct_answer, points_worth FROM questions 
+		WHERE NOT EXISTS (
+			SELECT 1 FROM user_question_history h 
+			WHERE h.user_id = ? AND h.question_id = questions.id
+		)
+		AND subject = ? 
+		AND for_grade = ?
+		ORDER BY RANDOM()
+		LIMIT 10`, user_id, subject, grade)
+
 	if err != nil {
 		return nil, err
 	}
@@ -183,6 +206,7 @@ func CheckIfAnswerCorrect(question_id int, answer string) (bool, int, error) {
 
 func UpdateUserPoints(usr *User, total_points int) error {
 	_, err := db.Exec("UPDATE users SET points = points + ? WHERE id = ?", total_points, usr.Id)
+	usr.Points += total_points
 	if err != nil {
 		return err
 	}
@@ -196,4 +220,19 @@ func GetQuestionFromID(question_id int) (Question, error) {
 		return q, err
 	}
 	return q, nil
+}
+
+func UserDoneQuestion(user_id int, q Question, answer string, qId int) error {
+	is_correct := false
+	points := 0
+	if answer == q.Correct_answer {
+		is_correct = true
+		points = q.Points_worth
+	}
+
+	_, err := db.Exec(`INSERT INTO user_question_history (user_id, question_id, is_correct, points_earned) VALUES (?, ?, ?, ?) ON CONFLICT(user_id, question_id) DO NOTHING`, user_id, qId, is_correct, points)
+	if err != nil {
+		return err
+	}
+	return nil
 }

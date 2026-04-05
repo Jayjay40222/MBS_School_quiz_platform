@@ -1,15 +1,3 @@
-// Points
-let pts = +localStorage.getItem("points") || 0;
-
-function initUI() {
-    // Update points dynamically if present
-    if (document.getElementById("points"))
-        document.getElementById("points").innerText = pts;
-
-    if (document.getElementById("lbPoints"))
-        document.getElementById("lbPoints").innerText = pts;
-}
-
 // Navigate to a subject quiz
 function openSub(sub) {
     // localStorage.setItem("subject", sub);
