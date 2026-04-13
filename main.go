@@ -33,6 +33,9 @@ func main() {
 	mux.HandleFunc("/quiz/submit", handleQuizSubmit)
 	mux.HandleFunc("/teacher_login/", handleTeacherLogin)
 	mux.HandleFunc("/teacher_login", handleTeacherLogin)
+	mux.HandleFunc("/board", handleBoard)
+	mux.HandleFunc("/profile", handleProfile)
+	mux.HandleFunc("/teacher_dashboard", handleTeacherDashboard)
 	log.Fatal(http.ListenAndServe(":8080", mux))
 	log.Println("Server started on http://localhost:8080")
 }
@@ -179,19 +182,38 @@ func getCurrentUser(w http.ResponseWriter, r *http.Request) (*User, error) {
 		return nil, err
 	}
 
-	usr, err := GetUserFromSession(cookie.Value)
+	// Identify user from session token
+	cl_type, err := IdentifyClient(cookie)
 	if err != nil {
-		log.Println("DB error:", err)
+		log.Println("DB error during session identification:", err)
 		http.Error(w, "Server error", http.StatusInternalServerError)
 		return nil, err
 	}
 
-	if usr == nil {
-		log.Println("Invalid session. Redirecting to /login")
+	switch cl_type {
+	case "Teacher":
+		log.Println("Teacher session identified. Redirecting to /teacher_dashboard")
+		http.Redirect(w, r, "/teacher_dashboard", http.StatusSeeOther)
+		return nil, fmt.Errorf("teacher session")
+	case "User":
+		usr, err := GetUserFromSession(cookie.Value)
+		if err != nil {
+			log.Println("DB error:", err)
+			http.Error(w, "Server error", http.StatusInternalServerError)
+			return nil, err
+		}
+
+		if usr == nil {
+			log.Println("Invalid session. Redirecting to /login")
+			http.Redirect(w, r, "/login", http.StatusSeeOther)
+			return nil, err
+		}
+		return usr, nil
+	default:
+		log.Println("No valid session found. Redirecting to /login")
 		http.Redirect(w, r, "/login", http.StatusSeeOther)
-		return nil, err
+		return nil, fmt.Errorf("no valid session")
 	}
-	return usr, nil
 }
 
 func handleDashboard(w http.ResponseWriter, r *http.Request) {
@@ -267,6 +289,37 @@ func handleTeacherLogin(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, "Server error", http.StatusInternalServerError)
 		}
 		return
+	case http.MethodPost:
+		// Auth logic here (can be hardcoded for simplicity)
+		username := r.FormValue("name")
+		password := r.FormValue("pass")
+
+		if username == "teacher" && password == "password123" {
+			// Generate session token for teacher
+			token, err := generateSessionToken()
+			if err != nil {
+				log.Println("Error generating session token:", err)
+				http.Error(w, "Server error", http.StatusInternalServerError)
+				return
+			}
+			err = AddTeacherSessionToDB(token)
+			if err != nil {
+				log.Println("Error adding teacher session to DB:", err)
+				http.Error(w, "Server error", http.StatusInternalServerError)
+				return
+			}
+			http.SetCookie(w, &http.Cookie{
+				Name:     "session_token",
+				Value:    token,
+				HttpOnly: true,
+				Secure:   false,
+			})
+			http.Redirect(w, r, "/teacher_dashboard", http.StatusSeeOther)
+			return
+		} else {
+			w.Write([]byte("Incorrect teacher credentials"))
+			return
+		}
 	}
 
 }
@@ -274,11 +327,6 @@ func handleTeacherLogin(w http.ResponseWriter, r *http.Request) {
 func handleQuizSubmit(w http.ResponseWriter, r *http.Request) {
 	usr, err := getCurrentUser(w, r)
 	if err != nil {
-		return
-	}
-
-	if r.Method != http.MethodPost {
-		http.Error(w, "only POST requests allowed.", http.StatusMethodNotAllowed)
 		return
 	}
 
@@ -306,7 +354,7 @@ func handleQuizSubmit(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 
-			err = UserDoneQuestion(usr.Id, question, ans, qid)
+			inserted, err := UserDoneQuestion(usr.Id, question, ans, qid)
 			if err != nil {
 				http.Error(w, "Server Error", http.StatusInternalServerError)
 				log.Println("Failed adding question to history:", err)
@@ -316,7 +364,7 @@ func handleQuizSubmit(w http.ResponseWriter, r *http.Request) {
 			fmt.Println("Question ID:", qidStr, "Answer:", ans)
 			is_correct := ans == question.Correct_answer
 			earned := 0
-			if is_correct {
+			if is_correct && inserted {
 				earned = question.Points_worth
 				totalPoints += earned
 			}
@@ -352,5 +400,77 @@ func handleQuizSubmit(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		http.Error(w, "Server Error", 500)
 		log.Println("Template error:", err)
+	}
+}
+
+func handleBoard(w http.ResponseWriter, r *http.Request) {
+	lb_users, err := QueryUsersLeaderboard()
+	if err != nil {
+		http.Error(w, "Server error", http.StatusInternalServerError)
+		log.Println("Failed querying leaderboard")
+	}
+
+	data := struct {
+		Leaderboard []LeaderBoardUsers
+	}{
+		Leaderboard: lb_users,
+	}
+
+	err = templates.ExecuteTemplate(w, "board.html", data)
+	if err != nil {
+		http.Error(w, "Server Error", 500)
+		log.Println("Template error:", err)
+	}
+}
+
+func handleProfile(w http.ResponseWriter, r *http.Request) {
+	usr, err := getCurrentUser(w, r)
+	if err != nil {
+		return
+	}
+	usr_rank, err := GetRankingForUser(usr.Id)
+	if err != nil {
+		return
+	}
+
+	data := struct {
+		User User
+		Rank int
+	}{
+		User: *usr,
+		Rank: usr_rank,
+	}
+
+	err = templates.ExecuteTemplate(w, "profile.html", data)
+	if err != nil {
+		http.Error(w, "Server Error", 500)
+		log.Println("Template error:", err)
+	}
+}
+
+func handleTeacherDashboard(w http.ResponseWriter, r *http.Request) {
+	cookie, err := r.Cookie("session_token")
+	if err != nil {
+		log.Println("No session cookie found. Redirecting to /teacher_login")
+		http.Redirect(w, r, "/teacher_login", http.StatusSeeOther)
+		return
+	}
+
+	valid, err := CheckTeacherSession(cookie.Value)
+	if err != nil {
+		log.Println("Error checking teacher session:", err)
+		http.Error(w, "Server error", http.StatusInternalServerError)
+		return
+	}
+	if !valid {
+		log.Println("Invalid teacher session. Redirecting to /teacher_login")
+		http.Redirect(w, r, "/teacher_login", http.StatusSeeOther)
+		return
+	}
+
+	err = templates.ExecuteTemplate(w, "teacher_dashboard.html", nil)
+	if err != nil {
+		log.Println("Template execution error:", err)
+		http.Error(w, "Server error", http.StatusInternalServerError)
 	}
 }

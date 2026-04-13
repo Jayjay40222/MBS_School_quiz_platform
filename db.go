@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 	"log"
+	"net/http"
 
 	_ "github.com/mattn/go-sqlite3"
 )
@@ -69,6 +70,15 @@ func InitDB() {
 
     	UNIQUE(user_id, question_id)
 	);
+	`)
+
+	// Teacher sessions table
+	db.Exec(`
+	CREATE TABLE IF NOT EXISTS teacher_sessions (
+    	id INTEGER PRIMARY KEY AUTOINCREMENT,
+    	session_token TEXT UNIQUE NOT NULL,
+    	expires_at DATETIME
+	)
 	`)
 }
 
@@ -222,15 +232,146 @@ func GetQuestionFromID(question_id int) (Question, error) {
 	return q, nil
 }
 
-func UserDoneQuestion(user_id int, q Question, answer string, qId int) error {
+func UserDoneQuestion(user_id int, q Question, answer string, qId int) (bool, error) {
 	is_correct := false
 	points := 0
+
 	if answer == q.Correct_answer {
 		is_correct = true
 		points = q.Points_worth
 	}
 
-	_, err := db.Exec(`INSERT INTO user_question_history (user_id, question_id, is_correct, points_earned) VALUES (?, ?, ?, ?) ON CONFLICT(user_id, question_id) DO NOTHING`, user_id, qId, is_correct, points)
+	res, err := db.Exec(`
+	INSERT INTO user_question_history (user_id, question_id, is_correct, points_earned)
+	VALUES (?, ?, ?, ?)
+	ON CONFLICT(user_id, question_id) DO NOTHING
+	`, user_id, qId, is_correct, points)
+
+	if err != nil {
+		return false, err
+	}
+
+	rows, err := res.RowsAffected()
+	if err != nil {
+		return false, err
+	}
+
+	// true = actually inserted
+	return rows > 0, nil
+}
+
+func QueryUsersLeaderboard() ([]LeaderBoardUsers, error) {
+	rows, err := db.Query(`
+		SELECT full_name, points, class 
+		FROM users 
+		ORDER BY points DESC
+		LIMIT 10
+	`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var lb_usrs []LeaderBoardUsers
+
+	for rows.Next() {
+		var lb_usr LeaderBoardUsers
+
+		err := rows.Scan(&lb_usr.Full_Name, &lb_usr.Points, &lb_usr.Grade)
+		if err != nil {
+			return nil, err
+		}
+
+		lb_usr.Rank = len(lb_usrs) + 1
+		lb_usrs = append(lb_usrs, lb_usr)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return lb_usrs, nil
+}
+
+func GetRankingForUser(user_id int) (int, error) {
+	rows, err := db.Query(`
+		SELECT id 
+		FROM users 
+		ORDER BY points DESC
+	`)
+	if err != nil {
+		return 0, err
+	}
+	defer rows.Close()
+
+	i := 1
+
+	for rows.Next() {
+		var id int
+
+		err := rows.Scan(&id)
+		if err != nil {
+			return 0, err
+		}
+
+		if user_id == id {
+			return i, nil
+		}
+
+		i++
+	}
+
+	if err := rows.Err(); err != nil {
+		return 0, err
+	}
+
+	return 0, nil // user not found
+}
+
+func IdentifyClient(cookie *http.Cookie) (string, error) {
+	var usr_cookie string
+	if err != nil {
+		return "", err
+	}
+
+	err = db.QueryRow("SELECT session_token FROM sessions WHERE session_token = ? AND expires_at > datetime('now')", cookie.Value).Scan(&usr_cookie)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			// not found — handle as "no session" (e.g., clear cookie / unauthorized)
+			// Check if the client is a teacher
+			err = db.QueryRow("SELECT session_token FROM teacher_sessions WHERE session_token = ? AND expires_at > datetime('now')", cookie.Value).Scan(&usr_cookie)
+			if err != nil {
+				if err == sql.ErrNoRows {
+					return "", nil // no session at all
+				}
+				return "", err // real error checking teacher sessions
+			}
+			return "Teacher", nil // found in teacher sessions
+		} else {
+			// real DB error — log/return
+			return "", err
+		}
+	}
+	return "User", nil
+}
+
+func CheckTeacherSession(sessionToken string) (bool, error) {
+	var token string
+	err := db.QueryRow("SELECT session_token FROM teacher_sessions WHERE session_token = ? AND expires_at > datetime('now')", sessionToken).Scan(&token)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return false, nil // no valid teacher session
+		}
+		return false, err // real error
+	}
+	return true, nil // valid teacher session found
+}
+
+func AddTeacherSessionToDB(sessionToken string) error {
+	_, err := db.Exec(
+		"INSERT INTO teacher_sessions (session_token, expires_at) VALUES (?, datetime('now', '+24 hours'))",
+		sessionToken,
+	)
 	if err != nil {
 		return err
 	}

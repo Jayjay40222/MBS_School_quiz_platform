@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Quiz</title>
     <link rel="stylesheet" href="/static/play_style.css">
 </head>
@@ -51,8 +52,10 @@
         <hr>
         {{end}}
 
-        <button type="submit">Submit All</button>
-        <a href="/dashboard"><button type="button">Back</button></a>
+        <div class="btn-row">
+            <button type="button" class="muted" onclick="location.href='/dashboard'">Back</button>
+            <button type="submit">Submit All</button>
+        </div>
     </form>
 </div>
 

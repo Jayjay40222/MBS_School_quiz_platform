@@ -5,7 +5,14 @@
     font-family: 'Segoe UI', sans-serif;
 }
 
+html {
+    height: 100%;
+}
+
 body {
+    margin: 0;
+    min-height: 100vh;
+    min-height: 100dvh; /* modern fix for mobile viewport */
     background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
     color: white;
 }
@@ -112,6 +119,16 @@ body {
     object-fit: cover;
 }
 
+/* profile card used on profile page */
+.profile-card {
+    background: linear-gradient(135deg,#0f2027,#203a43,#2c5364);
+    padding: 22px;
+    border-radius: 14px;
+    text-align: center;
+    max-width: 520px;
+    margin: 18px auto;
+}
+
 .plusBtn {
     position: absolute;
     bottom: 0;
@@ -154,19 +171,48 @@ button {
     width: 100%;
     display: flex;
     justify-content: space-around;
-    background: rgba(255, 255, 255, 0.08);
+    background: rgba(255, 255, 255, 0.06); /* translucent navbar over dark background */
     padding: 12px;
 }
 
 .tab {
     font-size: 20px;
-    padding: 10px;
+    padding: 8px 12px;
     border-radius: 10px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    width: 22%;
+    text-align: center;
+    text-decoration: none; /* remove underlines */
+    color: #fff; /* white text on translucent navbar */
+}
+
+.tab .tab-title {
+    font-size: 13px;
+    font-weight: 700;
+}
+
+
+.tab .tab-desc {
+    font-size: 11px;
+    color: rgba(255,255,255,0.85);
 }
 
 .tab.active {
-    background: #00c6ff;
+    background: linear-gradient(90deg, #00c6ff, #0072ff);
+    color: #fff; /* keep text white on active gradient */
+    box-shadow: 0 8px 18px rgba(0,0,0,0.15);
+    transform: translateY(-4px);
 }
+
+.tab i {
+    font-size: 18px;
+}
+
+/* ensure nav links don't get underlined */
+.nav a { text-decoration: none; }
 
 /* QUIZ */
 .option {
@@ -189,4 +235,36 @@ button {
     font-size: 22px;
     padding: 18px;
     line-height: 1.5;
+}
+
+/* Responsive mobile tweaks */
+@media (max-width: 600px) {
+    body { font-size: 15px; }
+
+    /* increase top/bottom spacing so content isn't hidden behind nav */
+    .page { padding: 18px 12px 84px; }
+
+    /* stack grid to one column on small screens */
+    .grid { grid-template-columns: 1fr; }
+
+    /* make cards larger and easier to tap */
+    .card { padding: 18px; font-size: 18px; }
+
+    /* nav: icons only, hide titles/descriptions to save space */
+    .tab { width: auto; padding: 10px 8px; }
+    .tab .tab-title, .tab .tab-desc { display: none; }
+
+    /* make nav items larger for touch */
+    .nav { padding: 10px 8px; gap: 6px; }
+
+    /* ensure topbar content doesn't cramp */
+    .topbar { padding: 12px; font-size: 16px; }
+
+    /* profile avatar smaller on mobile */
+    .avatar { width: 80px; height: 80px; }
+}
+
+@media (min-width: 601px) and (max-width: 900px) {
+    .grid { grid-template-columns: repeat(2, 1fr); }
+    .tab { width: 24%; }
 }

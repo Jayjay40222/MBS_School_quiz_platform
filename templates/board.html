@@ -1,40 +1,61 @@
 <!DOCTYPE html>
 <html>
+
 <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Leaderboard</title>
     <link rel="stylesheet" href="/static/dashboard_style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 </head>
 
 <body>
 
-<div class="topbar">
-    <div>🎓 MBS Quiz</div>
-    <div>🔥 Streak: <span id="streak">0</span></div>
-</div>
-
-<div id="board" class="page active">
-
-    <div class="pointsBox">
-        🏆 Total Points: <span id="lbPoints">0</span>
+    <div class="topbar">
+        <div>🎓 MBS Quiz</div>
+        <div>🔥 Streak: <span id="streak">0</span></div>
     </div>
 
-    <div class="lb-item">
-        <div style="display:flex;align-items:center;">
-            <img id="lbPhoto" src="https://via.placeholder.com/40">
-            <span id="lbName">Student</span>
+    <div id="board" class="page active">
+        <h1 style="text-align: center;padding: 40px;">🏆 Leaderboard</h1>
+        <div class="pointsBox">
+            🏆 Total Points: <span id="lbPoints">0</span>
         </div>
-        <div id="lbScore">0</div>
+
+        {{range .Leaderboard}}
+        <div class="lb-item">
+            <div style="display:flex;align-items:center;">
+                <p style="padding-right: 12px;font-weight: bold;">{{.Rank}}</p>
+                <img src="https://cdn-icons-png.flaticon.com/512/3135/3135755.png">
+                <span>{{.Full_Name}}</span>
+            </div>
+            <div>{{.Points}}</div>
+        </div>
+        {{end}}
+
+    </div>
+    <div class="nav" role="navigation" aria-label="Primary">
+        <a href="/dashboard" class="tab" data-path="/home" aria-label="Home">
+            <i class="fas fa-home" aria-hidden="true"></i>
+            <span class="tab-title">Home</span>
+        </a>
+
+        <a href="/quiz" class="tab" data-path="/quiz" aria-label="Quizzes">
+            <i class="fas fa-question" aria-hidden="true"></i>
+            <span class="tab-title">Quizzes</span>
+        </a>
+
+        <a href="/board" class="tab" data-path="/board" aria-label="Leaderboard">
+            <i class="fas fa-trophy" aria-hidden="true"></i>
+            <span class="tab-title">Leaderboard</span>
+        </a>
+
+        <a href="/profile" class="tab" data-path="/profile" aria-label="Profile">
+            <i class="fas fa-user" aria-hidden="true"></i>
+            <span class="tab-title">Profile</span>
+        </a>
     </div>
 
-</div>
-
-<div class="nav">
-    <a href="/home" class="tab">🏠</a>
-    <a href="/quiz" class="tab">❓</a>
-    <a href="/board" class="tab active">🏆</a>
-    <a href="/profile" class="tab">👤</a>
-</div>
-
-<script src="/static/app.js"></script>
+    <script src="/static/app.js"></script>
 </body>
+
 </html>

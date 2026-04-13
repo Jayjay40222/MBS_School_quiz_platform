@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teacher Dashboard</title>
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
+            color: white;
+        }
+
+        /* TOP HEADER */
+        .header {
+            background: rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(15px);
+            padding: 18px;
+            text-align: center;
+            font-size: 20px;
+            font-weight: bold;
+        }
+
+        /* LAYOUT */
+        .container {
+            display: flex;
+        }
+
+        /* SIDEBAR */
+        .sidebar {
+            width: 220px;
+            min-height: 100vh;
+            background: rgba(255, 255, 255, 0.06);
+            backdrop-filter: blur(15px);
+            padding-top: 10px;
+        }
+
+        .sidebar button {
+            width: 100%;
+            padding: 15px;
+            border: none;
+            background: none;
+            color: white;
+            text-align: left;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        .sidebar button:hover {
+            background: #00c6ff;
+        }
+
+        /* CONTENT */
+        .content {
+            flex: 1;
+            padding: 20px;
+        }
+
+        /* GLASS BOX */
+        .box {
+            background: rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(15px);
+            padding: 18px;
+            margin-bottom: 15px;
+            border-radius: 14px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        /* INPUTS */
+        input,
+        textarea,
+        select {
+            width: 100%;
+            padding: 12px;
+            margin-top: 8px;
+            border-radius: 10px;
+            border: none;
+            background: rgba(255, 255, 255, 0.12);
+            color: white;
+            font-size: 16px;
+            outline: none;
+        }
+
+        select option {
+            color: black;
+        }
+
+        /* BUTTON */
+        button.save {
+            background: #00c6ff;
+            color: white;
+            border: none;
+            padding: 12px;
+            margin-top: 10px;
+            cursor: pointer;
+            border-radius: 12px;
+            font-weight: bold;
+        }
+
+        button.save:hover {
+            background: #0072ff;
+        }
+
+        /* LIST */
+        ul {
+            padding-left: 20px;
+        }
+
+        li {
+            margin: 8px 0;
+        }
+
+        /* HIDE PAGES */
+        .page {
+            display: none;
+        }
+
+        .page.active {
+            display: block;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="header">
+        👨‍🏫 Teacher Dashboard
+    </div>
+
+    <div class="container">
+
+        <!-- SIDEBAR -->
+        <div class="sidebar">
+            <button onclick="show('dashboard')"> Dashboard</button>
+            <button onclick="show('questions')"> Questions</button>
+            <button onclick="show('upload')"> Upload Worksheet</button>
+            <button onclick="show('students')"> Students</button>
+            <button onclick="show('leaderboard')"> Leaderboard</button>
+        </div>
+
+        <!-- CONTENT -->
+        <div class="content">
+
+            <!-- DASHBOARD -->
+            <div id="dashboard" class="page active">
+                <div class="box">
+                    <h2>Welcome Teacher 👋</h2>
+                    <p>Manage quizzes, students and worksheets from here.</p>
+                </div>
+            </div>
+
+            <!-- QUESTIONS -->
+            <div id="questions" class="page">
+                <div class="box">
+                    <h3>Add Question</h3>
+
+                    <select id="subject">
+                        <option>Math</option>
+                        <option>English</option>
+                        <option>Physics</option>
+                        <option>Chemistry</option>
+                        <option>Biology</option>
+                        <option>History</option>
+                        <option>Geography</option>
+                        <option>Economics</option>
+                    </select>
+
+                    <input id="question" placeholder="Enter question">
+                    <input id="opt1" placeholder="Option 1">
+                    <input id="opt2" placeholder="Option 2">
+                    <input id="opt3" placeholder="Option 3">
+                    <input id="opt4" placeholder="Option 4">
+                    <input id="correct" placeholder="Correct answer (0-3)">
+
+                    <button class="save" onclick="addQ()">Add Question</button>
+                </div>
+
+                <div class="box">
+                    <h3>Question List</h3>
+                    <ul id="list"></ul>
+                </div>
+            </div>
+
+            <!-- UPLOAD -->
+            <div id="upload" class="page">
+                <div class="box">
+                    <h3>Upload Worksheet</h3>
+                    <input type="file" id="file">
+                    <button class="save" onclick="upload()">Upload</button>
+                    <p id="msg"></p>
+                </div>
+            </div>
+
+            <!-- STUDENTS -->
+            <div id="students" class="page">
+                <div class="box">
+                    <h3>Students</h3>
+                    <ul>
+                        <li>a</li>
+                        <li>b</li>
+                        <li>c</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- LEADERBOARD -->
+            <div id="leaderboard" class="page">
+                <div class="box">
+                    <h3>Leaderboard</h3>
+                    <ol>
+                        <li>a- 95</li>
+                        <li>b - 88</li>
+                        <li>c - 80</li>
+                    </ol>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+
+        let questions = [];
+
+        /* NAV */
+        function show(page) {
+            document.querySelectorAll(".page").forEach(p => p.classList.remove("active"));
+            document.getElementById(page).classList.add("active");
+        }
+
+        /* ADD QUESTION */
+        function addQ() {
+            let s = document.getElementById("subject").value;
+            let q = document.getElementById("question").value;
+
+            let a = [
+                document.getElementById("opt1").value,
+                document.getElementById("opt2").value,
+                document.getElementById("opt3").value,
+                document.getElementById("opt4").value
+            ];
+
+            let c = document.getElementById("correct").value;
+
+            if (q === "") return;
+
+            questions.push({ s, q, a, c });
+            render();
+        }
+
+        /* SHOW LIST */
+        function render() {
+            let list = document.getElementById("list");
+            list.innerHTML = "";
+
+            questions.forEach((x, i) => {
+                list.innerHTML += `
+<li>
+<b>${x.s}</b>: ${x.q} 
+<br><small>${x.a.join(" | ")}</small>
+</li>`;
+            });
+        }
+
+        /* UPLOAD */
+        function upload() {
+            let file = document.getElementById("file").files[0];
+            if (file) {
+                document.getElementById("msg").innerText = "Uploaded: " + file.name;
+            }
+        }
+
+    </script>
+
+</body>
+
+</html>

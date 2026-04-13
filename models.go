@@ -35,3 +35,10 @@ type QuestionResult struct {
 	PointsEarned  int
 	IsCorrect     bool
 }
+
+type LeaderBoardUsers struct {
+	Rank      int
+	Full_Name string
+	Points    int
+	Grade     string
+}

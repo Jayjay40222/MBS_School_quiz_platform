@@ -32,21 +32,45 @@ function loadPhoto(event) {
 }
 
 // Tab navigation
-function show(id, el, push = true) {
-    document.querySelectorAll(".page").forEach(p => p.classList.remove("active"));
-    document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
-
-    document.getElementById(id).classList.add("active");
-    if (el) el.classList.add("active");
-
-    if (push) history.pushState({ page: id }, "", "/" + id);
+// app.js
+function setActiveTab(tabElement) {
+    // Remove active from all tabs
+    document.querySelectorAll(".nav .tab").forEach(t => {
+        t.classList.remove("active");
+        t.removeAttribute('aria-current');
+    });
+    // Add active to the clicked one
+    tabElement.classList.add("active");
+    tabElement.setAttribute('aria-current', 'page');
 }
 
-window.addEventListener("popstate", (event) => {
-    const id = event.state?.page || "home";
-    const tab = document.querySelector(`.tab[onclick*="show('${id}'`);
-    if (tab) show(id, tab, false);
+// Example for single-page tabs
+document.querySelectorAll(".nav .tab").forEach(tab => {
+    tab.addEventListener("click", function(e) {
+        // set active immediately for snappy UI
+        setActiveTab(this);
+        // let the link behave normally (navigate) so server-side routing still works
+    });
 });
 
-// Initialize UI on page load
-document.addEventListener("DOMContentLoaded", initUI);
+// Initialize active tab from current path
+function initActiveFromPath() {
+    let path = window.location.pathname || '/dashboard';
+    // treat root '/' as '/dashboard' for matching
+        // Normalize path: remove trailing slash (but keep single '/')
+        path = path.replace(/\/+$/, '') || '/';
+        // treat root '/' and '/dashboard' as '/home' for matching
+        if (path === '/' || path === '/dashboard') path = '/home';
+    // Find the tab with matching data-path or fallback to first tab
+    const match = document.querySelector(`.nav .tab[data-path="${path}"]`);
+    if (match) {
+        setActiveTab(match);
+    } else {
+        // try matching by prefix (e.g. /quiz/play)
+        const partial = document.querySelector(`.nav .tab[data-path][data-path="/quiz"]`);
+        if (path.startsWith('/quiz') && partial) setActiveTab(partial);
+    }
+}
+
+// Call on load
+document.addEventListener('DOMContentLoaded', initActiveFromPath);

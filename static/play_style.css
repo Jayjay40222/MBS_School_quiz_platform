@@ -7,6 +7,9 @@
 
 body {
     background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
+    background-repeat: no-repeat;
+    background-size: cover;
+    background-position: center top;
     color: white;
 }
 
@@ -24,6 +27,9 @@ body {
 .page {
     padding: 15px;
 }
+
+/* ensure content isn't hidden behind a fixed bottom nav (if present) */
+.page { padding-bottom: 84px; }
 
 /* QUESTION BOX */
 .box {
@@ -92,4 +98,26 @@ button {
     color: white;
     font-size: 16px;
     font-weight: bold;
+}
+
+.btn-row {
+    display: flex;
+    gap: 10px;
+}
+
+.btn-row button { flex: 1; }
+
+.btn-row .muted {
+    background: rgba(255,255,255,0.08);
+    color: white;
+}
+
+/* Mobile tweaks */
+@media (max-width: 600px) {
+    #question { font-size: 20px; }
+    .option { padding: 18px; font-size: 18px; }
+    .option label { gap: 10px; }
+    .page { padding: 16px 12px 110px; }
+    .topbar { padding: 12px; font-size: 16px; }
+    .btn-row { flex-direction: column-reverse; }
 }
