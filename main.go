@@ -48,6 +48,7 @@ func handleIndex(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/login", http.StatusSeeOther)
 	}
 }
+
 func handleLogin(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case http.MethodGet:
@@ -55,27 +56,28 @@ func handleLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	case http.MethodPost:
 		// Store creds
-		username := r.FormValue("name")
+		studID := r.FormValue("name")
 		password := r.FormValue("pass")
 		class := r.FormValue("cls")
 
 		// Check if user exists in DB
-		exists, err := CheckUserInDB(username)
+		exists, err := CheckUserInDB(studID)
 		if err != nil {
 			// Server error
-			log.Fatal("Failed checking user in DB")
+			log.Println("Failed checking user in DB")
 			http.Error(w, "Server Error", 500)
 		}
 
 		if exists {
-			usr, err := GetUser(username)
+			usr, err := GetUser(studID)
 			if err != nil {
 				// Server error
-				log.Fatal("Failed getting user from DB")
+				log.Println("Failed getting user from DB")
 				http.Error(w, "Server Error", 500)
 			}
 
-			if err := bcrypt.CompareHashAndPassword([]byte(usr.hashedPassword), []byte(password)); err != nil || usr.Grade != class {
+			// Check if password is correct
+			if usr.Password != password || usr.Grade != class {
 				w.Write([]byte("Incorrect password or class"))
 				return
 			}
@@ -83,7 +85,7 @@ func handleLogin(w http.ResponseWriter, r *http.Request) {
 			// Generate session token
 			sessionToken, err := generateSessionToken()
 			if err != nil {
-				log.Fatal("Failed generating session token")
+				log.Println("Failed generating session token")
 				http.Error(w, "Server Error", 500)
 			}
 			http.SetCookie(w, &http.Cookie{
@@ -96,7 +98,7 @@ func handleLogin(w http.ResponseWriter, r *http.Request) {
 
 			err = AddSessionToDB(usr.Id, sessionToken)
 			if err != nil {
-				log.Fatal("Failed adding session to DB")
+				log.Println("Failed adding session to DB")
 			}
 
 			http.Redirect(w, r, "/dashboard", http.StatusSeeOther)
@@ -152,9 +154,9 @@ func handleSignup(w http.ResponseWriter, r *http.Request) {
 		}
 
 		usr := &User{
-			FullName:       username,
-			hashedPassword: string(hashPass),
-			Grade:          class,
+			FullName: username,
+			Password: string(hashPass),
+			Grade:    class,
 		}
 
 		err = AddUserToDB(usr)
@@ -179,10 +181,9 @@ func getCurrentUser(w http.ResponseWriter, r *http.Request) (*User, error) {
 	if err != nil {
 		log.Println("No session cookie found. Redirecting to /login")
 		http.Redirect(w, r, "/login", http.StatusSeeOther)
-		return nil, err
+		return nil, fmt.Errorf("no cookie")
 	}
 
-	// Identify user from session token
 	cl_type, err := IdentifyClient(cookie)
 	if err != nil {
 		log.Println("DB error during session identification:", err)
@@ -194,7 +195,8 @@ func getCurrentUser(w http.ResponseWriter, r *http.Request) (*User, error) {
 	case "Teacher":
 		log.Println("Teacher session identified. Redirecting to /teacher_dashboard")
 		http.Redirect(w, r, "/teacher_dashboard", http.StatusSeeOther)
-		return nil, fmt.Errorf("teacher session")
+		return nil, fmt.Errorf("teacher redirect")
+
 	case "User":
 		usr, err := GetUserFromSession(cookie.Value)
 		if err != nil {
@@ -206,9 +208,11 @@ func getCurrentUser(w http.ResponseWriter, r *http.Request) (*User, error) {
 		if usr == nil {
 			log.Println("Invalid session. Redirecting to /login")
 			http.Redirect(w, r, "/login", http.StatusSeeOther)
-			return nil, err
+			return nil, fmt.Errorf("invalid session")
 		}
+
 		return usr, nil
+
 	default:
 		log.Println("No valid session found. Redirecting to /login")
 		http.Redirect(w, r, "/login", http.StatusSeeOther)
@@ -219,6 +223,7 @@ func getCurrentUser(w http.ResponseWriter, r *http.Request) (*User, error) {
 func handleDashboard(w http.ResponseWriter, r *http.Request) {
 	usr, err := getCurrentUser(w, r)
 	if err != nil {
+		fmt.Println("Error getting current user:", err)
 		return
 	}
 
@@ -261,7 +266,7 @@ func handleQuizPlay(w http.ResponseWriter, r *http.Request) {
 	questions, err := QueryQuestionsForUser(usr.Id, subject, grade)
 	if err != nil {
 		http.Error(w, "Server error", 500)
-		log.Fatal("Failed querying questions", err)
+		log.Println("Failed querying questions", err)
 		return
 	}
 

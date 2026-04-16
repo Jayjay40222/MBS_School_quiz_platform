@@ -1,13 +1,13 @@
 package main
 
 type User struct {
-	Id             int
-	FullName       string
-	hashedPassword string
-	Grade          string
-	Points         int
-	Streak         int
-	Questions_done []int
+	Id       int
+	StudID   string
+	FullName string
+	Password string
+	Grade    string
+	Points   int
+	Streak   int
 }
 
 type Question struct {

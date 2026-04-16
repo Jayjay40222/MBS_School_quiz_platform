@@ -24,9 +24,10 @@ func InitDB() {
 	db.Exec(`
 		CREATE TABLE IF NOT EXISTS users (
     	id INTEGER PRIMARY KEY AUTOINCREMENT,
+		studID TEXT UNIQUE,
     	full_name TEXT UNIQUE,
-    	hashed_password TEXT NOT NULL,
-    	class TEXT
+    	password TEXT NOT NULL,
+    	class TEXT,
 		points INTEGER DEFAULT 0
 	)
 	`)
@@ -86,12 +87,12 @@ func GetDB() *sql.DB {
 	return db
 }
 
-func CheckUserInDB(user string) (bool, error) {
+func CheckUserInDB(studID string) (bool, error) {
 	var id int
 
 	err := db.QueryRow(
-		"SELECT id FROM users WHERE full_name = ?",
-		user,
+		"SELECT id FROM users WHERE studID = ?",
+		studID,
 	).Scan(&id)
 
 	if err != nil {
@@ -104,13 +105,13 @@ func CheckUserInDB(user string) (bool, error) {
 	return true, nil // user exists
 }
 
-func GetUser(user string) (*User, error) {
+func GetUser(studID string) (*User, error) {
 	var usr User
 
 	err := db.QueryRow(
-		"SELECT id, full_name, hashed_password, class FROM users WHERE full_name = ?",
-		user,
-	).Scan(&usr.Id, &usr.FullName, &usr.hashedPassword, &usr.Grade)
+		"SELECT id, studID, full_name, password, class FROM users WHERE studID = ?",
+		studID,
+	).Scan(&usr.Id, &usr.StudID, &usr.FullName, &usr.Password, &usr.Grade)
 
 	if err != nil {
 		return nil, err
@@ -128,7 +129,7 @@ func AddSessionToDB(userID int, sessionToken string) error {
 }
 
 func AddUserToDB(usr *User) error {
-	_, err = db.Exec("INSERT INTO users (full_name, hashed_password, class) VALUES (?, ?, ?)", usr.FullName, usr.hashedPassword, usr.Grade)
+	_, err = db.Exec("INSERT INTO users (studID, full_name, password, class) VALUES (?, ?, ?)", usr.StudID, usr.FullName, usr.Password, usr.Grade)
 	return err
 }
 
@@ -146,8 +147,8 @@ func GetUserFromSession(session string) (*User, error) {
 	}
 
 	// Get user info from users table
-	err = db.QueryRow("SELECT id, full_name, hashed_password, class, points FROM users WHERE id = ?", usr_id).
-		Scan(&usr.Id, &usr.FullName, &usr.hashedPassword, &usr.Grade, &usr.Points)
+	err = db.QueryRow("SELECT id, studID, full_name, password, class, points FROM users WHERE id = ?", usr_id).
+		Scan(&usr.Id, &usr.StudID, &usr.FullName, &usr.Password, &usr.Grade, &usr.Points)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return nil, nil
@@ -329,30 +330,40 @@ func GetRankingForUser(user_id int) (int, error) {
 }
 
 func IdentifyClient(cookie *http.Cookie) (string, error) {
-	var usr_cookie string
-	if err != nil {
+	var token string
+
+	err := db.QueryRow(`
+		SELECT session_token 
+		FROM sessions 
+		WHERE session_token = ? 
+		AND expires_at > datetime('now')
+	`, cookie.Value).Scan(&token)
+
+	if err == nil {
+		return "User", nil
+	}
+
+	if err != sql.ErrNoRows {
 		return "", err
 	}
 
-	err = db.QueryRow("SELECT session_token FROM sessions WHERE session_token = ? AND expires_at > datetime('now')", cookie.Value).Scan(&usr_cookie)
-	if err != nil {
-		if err == sql.ErrNoRows {
-			// not found — handle as "no session" (e.g., clear cookie / unauthorized)
-			// Check if the client is a teacher
-			err = db.QueryRow("SELECT session_token FROM teacher_sessions WHERE session_token = ? AND expires_at > datetime('now')", cookie.Value).Scan(&usr_cookie)
-			if err != nil {
-				if err == sql.ErrNoRows {
-					return "", nil // no session at all
-				}
-				return "", err // real error checking teacher sessions
-			}
-			return "Teacher", nil // found in teacher sessions
-		} else {
-			// real DB error — log/return
-			return "", err
-		}
+	// check teacher sessions
+	err = db.QueryRow(`
+		SELECT session_token 
+		FROM teacher_sessions 
+		WHERE session_token = ? 
+		AND expires_at > datetime('now')
+	`, cookie.Value).Scan(&token)
+
+	if err == nil {
+		return "Teacher", nil
 	}
-	return "User", nil
+
+	if err == sql.ErrNoRows {
+		return "", nil
+	}
+
+	return "", err
 }
 
 func CheckTeacherSession(sessionToken string) (bool, error) {
