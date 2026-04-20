@@ -17,8 +17,8 @@ var templates = template.Must(template.ParseGlob("templates/*.html"))
 
 func main() {
 	InitDB()
-	que := Question{Question: "What is Atomic mass?", Subject: "Chemistry", For_grade: "Grade 9", A: "Some some", B: "b soe som", C: "c som", D: "d som", Correct_answer: "A", Points_worth: 5}
-	AddQuestionToDB(que)
+	// que := Question{Question: "What is Atomic mass?", Subject: "Chemistry", For_grade: "Grade 9", A: "Some some", B: "b soe som", C: "c som", D: "d som", Correct_answer: "A", Points_worth: 5}
+	// AddQuestionToDB(que)
 	mux := http.NewServeMux()
 	mux.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("static"))))
 	mux.HandleFunc("/", handleIndex)
@@ -26,6 +26,7 @@ func main() {
 	mux.HandleFunc("/login", handleLogin)
 	mux.HandleFunc("/signup/", handleSignup)
 	mux.HandleFunc("/signup", handleSignup)
+	mux.HandleFunc("/change_password/", handleChangePassword)
 	mux.HandleFunc("/dashboard", handleDashboard)
 	mux.HandleFunc("/quiz", handleQuiz)
 	mux.HandleFunc("/quiz/", handleQuiz)
@@ -36,8 +37,10 @@ func main() {
 	mux.HandleFunc("/board", handleBoard)
 	mux.HandleFunc("/profile", handleProfile)
 	mux.HandleFunc("/teacher_dashboard", handleTeacherDashboard)
-	log.Fatal(http.ListenAndServe(":8080", mux))
+	mux.HandleFunc("/teacher/add_question", handleAddQuestion)
+	mux.HandleFunc("/teacher/delete_question", handleDeleteQuestion)
 	log.Println("Server started on http://localhost:8080")
+	log.Fatal(http.ListenAndServe(":8080", mux))
 }
 
 func handleIndex(w http.ResponseWriter, r *http.Request) {
@@ -66,6 +69,7 @@ func handleLogin(w http.ResponseWriter, r *http.Request) {
 			// Server error
 			log.Println("Failed checking user in DB")
 			http.Error(w, "Server Error", 500)
+			return
 		}
 
 		if exists {
@@ -101,6 +105,11 @@ func handleLogin(w http.ResponseWriter, r *http.Request) {
 				log.Println("Failed adding session to DB")
 			}
 
+			// If user is using the default password, redirect to change password page
+			if password == studID {
+				http.Redirect(w, r, "/change_password", http.StatusSeeOther)
+				return
+			}
 			http.Redirect(w, r, "/dashboard", http.StatusSeeOther)
 			log.Println("Session token generated:", sessionToken)
 			return
@@ -117,6 +126,40 @@ func generateSessionToken() (string, error) {
 		return "", err
 	}
 	return base64.URLEncoding.EncodeToString(b), nil
+}
+
+func handleChangePassword(w http.ResponseWriter, r *http.Request) {
+	usr, err := getCurrentUser(w, r)
+	if err != nil {
+		fmt.Println("Error getting current user:", err)
+		return
+	}
+
+	switch r.Method {
+	case http.MethodGet:
+		err = templates.ExecuteTemplate(w, "change_password.html", usr)
+		if err != nil {
+			log.Println("Template execution error:", err)
+			http.Error(w, "Server error", http.StatusInternalServerError)
+		}
+		return
+	case http.MethodPost:
+		newPassword := r.FormValue("new_pass")
+
+		if len(newPassword) < 8 {
+			http.Error(w, "Password must be at least 8 characters long", http.StatusBadRequest)
+			return
+		}
+
+		err := ChangePassForUser(usr.Id, newPassword)
+		if err != nil {
+			log.Println("Failed changing password:", err)
+			http.Error(w, "Server error", http.StatusInternalServerError)
+			return
+		}
+		http.Redirect(w, r, "/profile", http.StatusSeeOther)
+		return
+	}
 }
 
 func handleSignup(w http.ResponseWriter, r *http.Request) {
@@ -473,9 +516,77 @@ func handleTeacherDashboard(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = templates.ExecuteTemplate(w, "teacher_dashboard.html", nil)
+	questions, err := QueryAllQuestions()
+	if err != nil {
+		log.Println("Error querying questions:", err)
+		http.Error(w, "Server error", http.StatusInternalServerError)
+		return
+	}
+
+	data := struct {
+		Questions []Question
+	}{
+		Questions: questions,
+	}
+
+	err = templates.ExecuteTemplate(w, "teacher_dashboard.html", data)
 	if err != nil {
 		log.Println("Template execution error:", err)
 		http.Error(w, "Server error", http.StatusInternalServerError)
+	}
+}
+
+func handleAddQuestion(w http.ResponseWriter, r *http.Request) {
+	if r.Method == http.MethodPost {
+		subject := r.FormValue("subject")
+		grade := r.FormValue("grade")
+		questionText := r.FormValue("question")
+		opt1 := r.FormValue("opt1")
+		opt2 := r.FormValue("opt2")
+		opt3 := r.FormValue("opt3")
+		opt4 := r.FormValue("opt4")
+		correct := strings.ToUpper(r.FormValue("correct")) // A, B, C, D
+		points_worth, err := strconv.Atoi(r.FormValue("points"))
+		if err != nil {
+			log.Println("Invalid points worth value:", r.FormValue("points"))
+			http.Error(w, "Invalid points worth value", http.StatusBadRequest)
+			return
+		}
+
+		question := Question{
+			Question:       questionText,
+			Subject:        subject,
+			For_grade:      grade,
+			A:              opt1,
+			B:              opt2,
+			C:              opt3,
+			D:              opt4,
+			Correct_answer: correct,
+			Points_worth:   points_worth,
+		}
+		AddQuestionToDB(question)
+
+		http.Redirect(w, r, "/teacher_dashboard", http.StatusSeeOther)
+		return
+	}
+}
+
+func handleDeleteQuestion(w http.ResponseWriter, r *http.Request) {
+	if r.Method == http.MethodPost {
+		qidStr := r.FormValue("id")
+		qid, err := strconv.Atoi(qidStr)
+		if err != nil {
+			http.Error(w, "Invalid question ID", http.StatusBadRequest)
+			return
+		}
+
+		err = DeleteQuestionFromDB(qid)
+		if err != nil {
+			http.Error(w, "Failed to delete question", http.StatusInternalServerError)
+			return
+		}
+
+		http.Redirect(w, r, "/teacher_dashboard", http.StatusSeeOther)
+		return
 	}
 }

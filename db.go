@@ -388,3 +388,38 @@ func AddTeacherSessionToDB(sessionToken string) error {
 	}
 	return nil
 }
+
+func QueryAllQuestions() ([]Question, error) {
+	rows, err := db.Query("SELECT id, question, subject, for_grade, option_a, option_b, option_c, option_d, correct_answer, points_worth FROM questions")
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var questions []Question
+	for rows.Next() {
+		var q Question
+
+		err := rows.Scan(&q.Id, &q.Question, &q.Subject, &q.For_grade, &q.A, &q.B, &q.C, &q.D, &q.Correct_answer, &q.Points_worth)
+		if err != nil {
+			return nil, err
+		}
+		questions = append(questions, q)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return questions, nil
+}
+
+func DeleteQuestionFromDB(question_id int) error {
+	_, err := db.Exec("DELETE FROM questions WHERE id = ?", question_id)
+	return err
+}
+
+func ChangePassForUser(user_id int, newPassword string) error {
+	_, err := db.Exec("UPDATE users SET password = ? WHERE id = ?", newPassword, user_id)
+	return err
+}

@@ -5,128 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Teacher Dashboard</title>
-
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: 'Segoe UI', sans-serif;
-        }
-
-        body {
-            background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
-            color: white;
-        }
-
-        /* TOP HEADER */
-        .header {
-            background: rgba(255, 255, 255, 0.08);
-            backdrop-filter: blur(15px);
-            padding: 18px;
-            text-align: center;
-            font-size: 20px;
-            font-weight: bold;
-        }
-
-        /* LAYOUT */
-        .container {
-            display: flex;
-        }
-
-        /* SIDEBAR */
-        .sidebar {
-            width: 220px;
-            min-height: 100vh;
-            background: rgba(255, 255, 255, 0.06);
-            backdrop-filter: blur(15px);
-            padding-top: 10px;
-        }
-
-        .sidebar button {
-            width: 100%;
-            padding: 15px;
-            border: none;
-            background: none;
-            color: white;
-            text-align: left;
-            cursor: pointer;
-            font-size: 16px;
-        }
-
-        .sidebar button:hover {
-            background: #00c6ff;
-        }
-
-        /* CONTENT */
-        .content {
-            flex: 1;
-            padding: 20px;
-        }
-
-        /* GLASS BOX */
-        .box {
-            background: rgba(255, 255, 255, 0.08);
-            backdrop-filter: blur(15px);
-            padding: 18px;
-            margin-bottom: 15px;
-            border-radius: 14px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-        }
-
-        /* INPUTS */
-        input,
-        textarea,
-        select {
-            width: 100%;
-            padding: 12px;
-            margin-top: 8px;
-            border-radius: 10px;
-            border: none;
-            background: rgba(255, 255, 255, 0.12);
-            color: white;
-            font-size: 16px;
-            outline: none;
-        }
-
-        select option {
-            color: black;
-        }
-
-        /* BUTTON */
-        button.save {
-            background: #00c6ff;
-            color: white;
-            border: none;
-            padding: 12px;
-            margin-top: 10px;
-            cursor: pointer;
-            border-radius: 12px;
-            font-weight: bold;
-        }
-
-        button.save:hover {
-            background: #0072ff;
-        }
-
-        /* LIST */
-        ul {
-            padding-left: 20px;
-        }
-
-        li {
-            margin: 8px 0;
-        }
-
-        /* HIDE PAGES */
-        .page {
-            display: none;
-        }
-
-        .page.active {
-            display: block;
-        }
-    </style>
+    <link rel="stylesheet" href="/static/teacher_dashboard_style.css">
 </head>
 
 <body>
@@ -161,31 +40,59 @@
             <div id="questions" class="page">
                 <div class="box">
                     <h3>Add Question</h3>
+                    <form action="/teacher/add_question" method="POST">
 
-                    <select id="subject">
-                        <option>Math</option>
-                        <option>English</option>
-                        <option>Physics</option>
-                        <option>Chemistry</option>
-                        <option>Biology</option>
-                        <option>History</option>
-                        <option>Geography</option>
-                        <option>Economics</option>
-                    </select>
+                        <select id="subject" name="subject" required>
+                            <option>Math</option>
+                            <option>English</option>
+                            <option>Physics</option>
+                            <option>Chemistry</option>
+                            <option>Biology</option>
+                            <option>History</option>
+                            <option>Geography</option>
+                            <option>Economics</option>
+                        </select>
 
-                    <input id="question" placeholder="Enter question">
-                    <input id="opt1" placeholder="Option 1">
-                    <input id="opt2" placeholder="Option 2">
-                    <input id="opt3" placeholder="Option 3">
-                    <input id="opt4" placeholder="Option 4">
-                    <input id="correct" placeholder="Correct answer (0-3)">
+                        <select id="grade" name="grade" required>
+                            <option>Grade 9</option>
+                            <option>Grade 10</option>
+                            <option>Grade 11</option>
+                            <option>Grade 12</option>
+                        </select>
 
-                    <button class="save" onclick="addQ()">Add Question</button>
+                        <input id="question" name="question" placeholder="Enter question" required>
+
+                        <input id="opt1" name="opt1" placeholder="Option 1" required>
+                        <input id="opt2" name="opt2" placeholder="Option 2" required>
+                        <input id="opt3" name="opt3" placeholder="Option 3" required>
+                        <input id="opt4" name="opt4" placeholder="Option 4" required>
+
+                        <input id="correct" name="correct" placeholder="Correct answer (A-D)" required>
+                        <input id="points" name="points" placeholder="Points Worth" required>
+
+                        <button class="save" type="submit">Add Question</button>
+
+                    </form>
                 </div>
 
                 <div class="box">
                     <h3>Question List</h3>
-                    <ul id="list"></ul>
+                </div>
+                <div class="box" id="list">
+                    <!-- 1 box per question -->
+                    {{range .Questions}}
+                    <div class="question-box">
+                        <p><strong>Question:</strong> {{.Question}}</p>
+                        <p><strong>Options:</strong> {{.A}} | {{.B}} | {{.C}} | {{.D}}</p>
+                        <p><strong>Correct Answer:</strong> {{.Correct_answer}}</p>
+                        <p><strong>Points Worth:</strong> {{.Points_worth}}</p>
+                        <form method="POST" action="/teacher/delete_question">
+                            <input type="hidden" name="id" value="{{.Id}}">
+                            <button class="delete-btn" type="submit">Delete Question</button>
+                        </form>
+                    </div>
+                    <br>
+                    {{end}}
                 </div>
             </div>
 
