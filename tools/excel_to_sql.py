@@ -1,29 +1,46 @@
 import pandas as pd
 import sqlite3
-import os
 
 conn = sqlite3.connect("users.db")
+cursor = conn.cursor()
 
-files = ["Grade_9D.xlsx", "Grade_9C.xlsx", "Grade_9B.xlsx", "Grade_9A.csv"]
+files = ["Grade_12A.xlsx", "Grade_12B.xlsx"]
 
 for file in files:
-    # Read file based on type
     if file.endswith(".csv"):
         df = pd.read_csv(file)
     else:
         df = pd.read_excel(file)
 
-    # Rename columns to match your DB schema
+    # Normalize column names
     df = df.rename(columns={
         "Student_Name": "full_name",
         "Class": "class",
-        "Password": "password"
+        "Password": "password",
+        "ID": "studID"
     })
 
-    # Keep only needed columns
-    df = df[["ID", "full_name",  "password", "class"]]
+    # Keep required columns
+    df = df[["studID", "full_name", "password", "class"]]
 
-    # Insert into existing table
-    df.to_sql("users", conn, if_exists="append", index=False)
+    # Remove incomplete rows
+    df = df.dropna(subset=["studID", "full_name", "password"])
 
+    # Add points column (default 0)
+    df["points"] = 0
+
+    # Insert safely
+    for _, row in df.iterrows():
+        cursor.execute("""
+            INSERT OR IGNORE INTO users (studID, full_name, password, class, points)
+            VALUES (?, ?, ?, ?, ?)
+        """, (
+            row["studID"],
+            row["full_name"],
+            row["password"],
+            row["class"],
+            row["points"]
+        ))
+
+conn.commit()
 conn.close()

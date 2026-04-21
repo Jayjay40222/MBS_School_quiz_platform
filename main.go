@@ -27,6 +27,7 @@ func main() {
 	mux.HandleFunc("/signup/", handleSignup)
 	mux.HandleFunc("/signup", handleSignup)
 	mux.HandleFunc("/change_password/", handleChangePassword)
+	mux.HandleFunc("/change_password", handleChangePassword)
 	mux.HandleFunc("/dashboard", handleDashboard)
 	mux.HandleFunc("/quiz", handleQuiz)
 	mux.HandleFunc("/quiz/", handleQuiz)
@@ -144,7 +145,7 @@ func handleChangePassword(w http.ResponseWriter, r *http.Request) {
 		}
 		return
 	case http.MethodPost:
-		newPassword := r.FormValue("new_pass")
+		newPassword := r.FormValue("new_password")
 
 		if len(newPassword) < 8 {
 			http.Error(w, "Password must be at least 8 characters long", http.StatusBadRequest)
