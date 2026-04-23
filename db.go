@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"time"
 
 	_ "github.com/mattn/go-sqlite3"
 )
@@ -20,15 +21,16 @@ func InitDB() {
 		log.Fatal(err)
 	}
 
-	// Users table
 	db.Exec(`
-		CREATE TABLE IF NOT EXISTS users (
-    	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	CREATE TABLE IF NOT EXISTS users (
+		id INTEGER PRIMARY KEY AUTOINCREMENT,
 		studID TEXT UNIQUE,
-    	full_name TEXT UNIQUE,
-    	password TEXT NOT NULL,
-    	class TEXT,
-		points INTEGER DEFAULT 0
+		full_name TEXT,
+		password TEXT NOT NULL,
+		class TEXT,
+		points INTEGER DEFAULT 0,
+		streak INTEGER DEFAULT 0,
+		last_activity TEXT
 	)
 	`)
 
@@ -109,9 +111,9 @@ func GetUser(studID string) (*User, error) {
 	var usr User
 
 	err := db.QueryRow(
-		"SELECT id, studID, full_name, password, class FROM users WHERE studID = ?",
+		"SELECT id, studID, full_name, password, class, points, streak FROM users WHERE studID = ?",
 		studID,
-	).Scan(&usr.Id, &usr.StudID, &usr.FullName, &usr.Password, &usr.Grade)
+	).Scan(&usr.Id, &usr.StudID, &usr.FullName, &usr.Password, &usr.Grade, &usr.Points, &usr.Streak)
 
 	if err != nil {
 		return nil, err
@@ -147,8 +149,8 @@ func GetUserFromSession(session string) (*User, error) {
 	}
 
 	// Get user info from users table
-	err = db.QueryRow("SELECT id, studID, full_name, password, class, points FROM users WHERE id = ?", usr_id).
-		Scan(&usr.Id, &usr.StudID, &usr.FullName, &usr.Password, &usr.Grade, &usr.Points)
+	err = db.QueryRow("SELECT id, studID, full_name, password, class, points, streak FROM users WHERE id = ?", usr_id).
+		Scan(&usr.Id, &usr.StudID, &usr.FullName, &usr.Password, &usr.Grade, &usr.Points, &usr.Streak)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return nil, nil
@@ -263,7 +265,7 @@ func UserDoneQuestion(user_id int, q Question, answer string, qId int) (bool, er
 
 func QueryUsersLeaderboard() ([]LeaderBoardUsers, error) {
 	rows, err := db.Query(`
-		SELECT full_name, points, class 
+		SELECT full_name, points, class
 		FROM users 
 		ORDER BY points DESC
 		LIMIT 10
@@ -421,5 +423,56 @@ func DeleteQuestionFromDB(question_id int) error {
 
 func ChangePassForUser(user_id int, newPassword string) error {
 	_, err := db.Exec("UPDATE users SET password = ? WHERE id = ?", newPassword, user_id)
+	return err
+}
+
+func UpdateStreak(userID int) error {
+	today := time.Now().Format("2006-01-02")
+	yesterday := time.Now().AddDate(0, 0, -1).Format("2006-01-02")
+
+	var last sql.NullString
+	var streak int
+
+	err := db.QueryRow(`
+		SELECT last_active, streak
+		FROM users
+		WHERE id = ?
+	`, userID).Scan(&last, &streak)
+
+	if err != nil {
+		return err
+	}
+
+	// If never set before
+	if !last.Valid || last.String == "" {
+		_, err = db.Exec(`
+			UPDATE users
+			SET streak = 1,
+				last_active = ?
+			WHERE id = ?
+		`, today, userID)
+		return err
+	}
+
+	// Already logged today → do nothing
+	if last.String == today {
+		return nil
+	}
+
+	// Continued streak
+	if last.String == yesterday {
+		streak++
+	} else {
+		// broken streak
+		streak = 1
+	}
+
+	_, err = db.Exec(`
+		UPDATE users
+		SET streak = ?,
+			last_active = ?
+		WHERE id = ?
+	`, streak, today, userID)
+
 	return err
 }

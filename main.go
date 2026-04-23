@@ -106,6 +106,12 @@ func handleLogin(w http.ResponseWriter, r *http.Request) {
 				log.Println("Failed adding session to DB")
 			}
 
+			// Update streak for user
+			err = UpdateStreak(usr.Id)
+			if err != nil {
+				log.Println("Failed updating streak:", err)
+			}
+
 			// If user is using the default password, redirect to change password page
 			if password == studID {
 				http.Redirect(w, r, "/change_password", http.StatusSeeOther)
@@ -453,6 +459,10 @@ func handleQuizSubmit(w http.ResponseWriter, r *http.Request) {
 }
 
 func handleBoard(w http.ResponseWriter, r *http.Request) {
+	usr, err := getCurrentUser(w, r)
+	if err != nil {
+		return
+	}
 	lb_users, err := QueryUsersLeaderboard()
 	if err != nil {
 		http.Error(w, "Server error", http.StatusInternalServerError)
@@ -461,8 +471,10 @@ func handleBoard(w http.ResponseWriter, r *http.Request) {
 
 	data := struct {
 		Leaderboard []LeaderBoardUsers
+		User        User
 	}{
 		Leaderboard: lb_users,
+		User:        *usr,
 	}
 
 	err = templates.ExecuteTemplate(w, "board.html", data)
